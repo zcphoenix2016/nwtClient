@@ -44,4 +44,8 @@ public:
 private:
     int ConnectServer();
     int Login();
+    void AppendString(CString strText);
+
+public:
+    afx_msg void OnBnClickedSend();
 };

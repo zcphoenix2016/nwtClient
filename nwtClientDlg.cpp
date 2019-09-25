@@ -70,6 +70,7 @@ BEGIN_MESSAGE_MAP(CnwtClientDlg, CDialogEx)
     ON_WM_SYSCOMMAND()
     ON_WM_PAINT()
     ON_WM_QUERYDRAGICON()
+    ON_BN_CLICKED(ID_SEND, &CnwtClientDlg::OnBnClickedSend)
 END_MESSAGE_MAP()
 
 
@@ -225,4 +226,32 @@ int CnwtClientDlg::ConnectServer() {
     }
 
     return 0;
+}
+
+void CnwtClientDlg::AppendString(CString strText) {
+    CString strOld = "", strNew = "";
+    m_editMsgList.GetWindowText(strOld);
+    strNew = strOld + (strOld.IsEmpty() ? "" : "\r\n") + strText;
+    m_editMsgList.SetWindowText(strNew);
+}
+
+void CnwtClientDlg::OnBnClickedSend()
+{
+    CString strMsgSend = "";
+    m_editMsgSend.GetWindowText(strMsgSend);
+    NwtHeader nwtHead(CMD_INSTANT_MSG, m_own.m_account, 123, strMsgSend.GetLength()); //TODO: Use the contact account from the list
+    char buf[1024] = { 0 };
+    memcpy(buf, &nwtHead, sizeof(NwtHeader));
+    memcpy(buf + sizeof(NwtHeader), strMsgSend.GetString(), nwtHead.m_contentLength);
+    int retCode = send(m_sock, buf, sizeof(NwtHeader) + nwtHead.m_contentLength, 0);
+    if (0 > retCode) {
+        CString strText = "";
+        int errNo = WSAGetLastError();
+        strText.Format("[ERROR] 消息发送失败： errNo = %d", errNo);
+        MessageBox(strText, "提示信息");
+        return;
+    }
+
+    AppendString("[SEND] " + strMsgSend);
+    m_editMsgSend.SetWindowText("");
 }
