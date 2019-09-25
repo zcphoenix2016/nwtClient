@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Contact.h"
+#include <vector>
 
 // CnwtClientDlg 对话框
 class CnwtClientDlg : public CDialogEx
@@ -34,6 +35,7 @@ protected:
     DECLARE_MESSAGE_MAP()
 public:
     CListBox m_listContacts;
+    std::vector<Contact> m_contacts;
     Contact m_own = Contact(0, "", "");
     CEdit m_editMsgList;
     CEdit m_editMsgSend;
@@ -45,6 +47,7 @@ private:
     int ConnectServer();
     int Login();
     void AppendString(CString strText);
+    static UINT RecvProcess(LPVOID lParam);
 
 public:
     afx_msg void OnBnClickedSend();

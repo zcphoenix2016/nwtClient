@@ -73,6 +73,17 @@ BEGIN_MESSAGE_MAP(CnwtClientDlg, CDialogEx)
     ON_BN_CLICKED(ID_SEND, &CnwtClientDlg::OnBnClickedSend)
 END_MESSAGE_MAP()
 
+class RecvProcessParam
+{
+public:
+    RecvProcessParam(unsigned int clientSock, CnwtClientDlg* clientDlg)
+        : m_clientSock(clientSock), m_clientDlg(clientDlg)
+    {
+    }
+
+    unsigned int m_clientSock = INVALID_SOCKET;
+    CnwtClientDlg* m_clientDlg = nullptr;
+};
 
 // CnwtClientDlg 消息处理程序
 
@@ -109,17 +120,18 @@ BOOL CnwtClientDlg::OnInitDialog()
     CString strText = "", strCaptain = "提示信息";
     int retCode = 0;
     retCode = ConnectServer();
-    if (0 > retCode) {
-        return FALSE;
+    if (0 == retCode) {
+        RecvProcessParam* rpp = new RecvProcessParam(m_sock, this); //will delete in RecvProcess()
+        AfxBeginThread(RecvProcess, rpp);
     }
 
-    retCode = Login();
-    if (0 > retCode) {
-        return FALSE;
+    Login();
+
+    m_contacts.emplace_back(1234, "mfx", "xxx"); //TODO: Load contacts from local file(or retrieve from server?)
+    for (auto iter = m_contacts.cbegin(); iter != m_contacts.cend(); ++iter) {
+        m_listContacts.AddString(iter->m_nickname.c_str());
     }
-
-
-    //NwtHeader nwtHead(CMD_LOGIN, m_own.m_account, 0, 0);
+    m_listContacts.SetCurSel(0);
 
     return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -237,13 +249,28 @@ void CnwtClientDlg::AppendString(CString strText) {
 
 void CnwtClientDlg::OnBnClickedSend()
 {
+    CString strSelContact = "";
+    m_listContacts.GetText(m_listContacts.GetCurSel(), strSelContact);
+    auto iter = m_contacts.cbegin();
+    for (; iter != m_contacts.cend(); ++iter) {
+        if (iter->m_nickname == std::string(strSelContact.GetString())) {
+            break;
+        }
+    }
+    if (iter == m_contacts.cend()) {
+        CString strText = "";
+        strText.Format("[ERROR] 联系人未注册： nickname = %s", strSelContact);
+        MessageBox(strText, "提示信息");
+        return;
+    }
+
     CString strMsgSend = "";
     m_editMsgSend.GetWindowText(strMsgSend);
-    NwtHeader nwtHead(CMD_INSTANT_MSG, m_own.m_account, 123, strMsgSend.GetLength()); //TODO: Use the contact account from the list
+    NwtHeader nwtHead(CMD_INSTANT_MSG, m_own.m_account, iter->m_account, strMsgSend.GetLength());
     char buf[1024] = { 0 };
     memcpy(buf, &nwtHead, sizeof(NwtHeader));
     memcpy(buf + sizeof(NwtHeader), strMsgSend.GetString(), nwtHead.m_contentLength);
-    int retCode = send(m_sock, buf, sizeof(NwtHeader) + nwtHead.m_contentLength, 0);
+    int retCode = send(m_sock, buf, sizeof(NwtHeader) + nwtHead.m_contentLength, 0); //TODO: refactor to single function to do loop send
     if (0 > retCode) {
         CString strText = "";
         int errNo = WSAGetLastError();
@@ -254,4 +281,51 @@ void CnwtClientDlg::OnBnClickedSend()
 
     AppendString("[SEND] " + strMsgSend);
     m_editMsgSend.SetWindowText("");
+}
+
+UINT CnwtClientDlg::RecvProcess(LPVOID lParam) {
+    RecvProcessParam* rpp = (RecvProcessParam*)lParam;
+    unsigned int clientSock = rpp->m_clientSock;
+    CnwtClientDlg* pClientDlg = rpp->m_clientDlg;
+    if (INVALID_SOCKET == clientSock || nullptr == pClientDlg)
+    {
+        AfxMessageBox("invalid client socket or null dlg pointer!");
+        return -1;
+    }
+
+    CString strNew = "", strOld = "", strRecv = "";
+    char buf[1024] = { 0 };
+    int rval = 0;
+    do
+    {
+        memset(buf, 0, sizeof(buf));
+        rval = recv(clientSock, buf, 1024, 0);//TODO: refactor to single function for loop-recv
+        if (0 >= rval) {
+            int errNo = WSAGetLastError();
+            if (0 > rval) {
+                strRecv.Format("[ERROR] recv()失败： clientSock = %d, errNo = %d", clientSock, errNo);
+            }
+            else {
+                strRecv.Format("[DEBUG] 客户端关闭链接： clientSock = %d, errNo = %d", clientSock, errNo);
+            }
+            pClientDlg->AppendString(strRecv);
+            break;
+        }
+        NwtHeader* nwtHead = (NwtHeader*)buf;
+        if (CMD_INSTANT_MSG == nwtHead->m_cmd) {
+            char* content = new char[nwtHead->m_contentLength + 1];
+            memset(content, 0, nwtHead->m_contentLength + 1);
+            memcpy(content, buf + sizeof(NwtHeader), nwtHead->m_contentLength);
+            strRecv.Format("[RECV] rval=%d, srcAccount=%d, targetAccount=%d, contentLength=%d, content=%s",
+                rval, nwtHead->m_srcAccount, nwtHead->m_tarAccount, nwtHead->m_contentLength, content);
+            pClientDlg->AppendString(strRecv);
+
+            delete[] content;
+        }
+
+    } while (1);
+
+    delete rpp; //allocate by ServerProcess()
+
+    return 0;
 }
