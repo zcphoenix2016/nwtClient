@@ -112,6 +112,11 @@ BOOL CnwtClientDlg::OnInitDialog()
         return FALSE;
     }
 
+    retCode = Login();
+    if (0 > retCode) {
+        return FALSE;
+    }
+
 
     //NwtHeader nwtHead(CMD_LOGIN, m_own.m_account, 0, 0);
 
@@ -165,6 +170,22 @@ void CnwtClientDlg::OnPaint()
 HCURSOR CnwtClientDlg::OnQueryDragIcon()
 {
     return static_cast<HCURSOR>(m_hIcon);
+}
+
+int CnwtClientDlg::Login() {
+    char buf[1024] = { 0 };
+    NwtHeader nwtHead(CMD_LOGIN, m_own.m_account, 0, 0);
+    memcpy(buf, &nwtHead, sizeof(NwtHeader));
+    int retCode = send(m_sock, buf, sizeof(NwtHeader), 0);
+    if (0 > retCode) {
+        CString strText = "";
+        int errNo = WSAGetLastError();
+        strText.Format("[ERROR] 消息发送失败： errNo = %d", errNo);
+        MessageBox(strText, "提示信息");
+        return -1;
+    }
+
+    return 0;
 }
 
 int CnwtClientDlg::ConnectServer() {

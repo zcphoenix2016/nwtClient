@@ -43,4 +43,5 @@ public:
 
 private:
     int ConnectServer();
+    int Login();
 };
