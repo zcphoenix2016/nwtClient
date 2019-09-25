@@ -7,18 +7,24 @@
 #define IDS_ABOUTBOX                    101
 #define IDD_NWTCLIENT_DIALOG            102
 #define IDR_MAINFRAME                   128
+#define IDD_LOGIN_DIALOG                130
 #define IDC_LIST_CONTACTS               1000
 #define IDC_EDIT_MSGSEND                1001
-#define IDC_EDIT_MSGLIST2               1002
 #define IDC_EDIT_MSG_LIST               1002
+#define IDC_EDIT_MSGLIST                1002
+#define IDC_STATIC_ACCOUNT              1002
+#define IDC_STATIC_PWD                  1003
+#define IDC_EDIT_ACCOUNT                1004
+#define IDC_EDIT_ACCOUNT2               1005
+#define IDC_EDIT_PWD                    1005
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1002
+#define _APS_NEXT_CONTROL_VALUE         1005
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
