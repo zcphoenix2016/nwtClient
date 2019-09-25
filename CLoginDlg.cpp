@@ -12,9 +12,10 @@
 IMPLEMENT_DYNAMIC(CLoginDlg, CDialogEx)
 
 CLoginDlg::CLoginDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_LOGIN_DIALOG, pParent)
+    : CDialogEx(IDD_LOGIN_DIALOG, pParent)
     , m_strAccount(_T(""))
     , m_strPwd(_T(""))
+    , m_strNickname(_T(""))
 {
 
 }
@@ -28,6 +29,7 @@ void CLoginDlg::DoDataExchange(CDataExchange* pDX)
     CDialogEx::DoDataExchange(pDX);
     DDX_Text(pDX, IDC_EDIT_ACCOUNT, m_strAccount);
     DDX_Text(pDX, IDC_EDIT_PWD, m_strPwd);
+    DDX_Text(pDX, IDC_EDIT_NICKNAME, m_strNickname);
 }
 
 
