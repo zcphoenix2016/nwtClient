@@ -58,7 +58,8 @@ CnwtClientDlg::CnwtClientDlg(CWnd* pParent /*=nullptr*/)
 
 void CnwtClientDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialogEx::DoDataExchange(pDX);
+    CDialogEx::DoDataExchange(pDX);
+    DDX_Control(pDX, IDC_LIST_CONTACTS, m_listContacts);
 }
 
 BEGIN_MESSAGE_MAP(CnwtClientDlg, CDialogEx)
