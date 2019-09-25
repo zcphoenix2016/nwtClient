@@ -105,10 +105,15 @@ BOOL CnwtClientDlg::OnInitDialog()
     SetIcon(m_hIcon, FALSE);        // 设置小图标
 
     // TODO: 在此添加额外的初始化代码
-    NwtHeader nwtHead(CMD_LOGIN, m_own.m_account, 0, 0);
+    CString strText = "", strCaptain = "提示信息";
+    int retCode = 0;
+    retCode = ConnectServer();
+    if (0 > retCode) {
+        return FALSE;
+    }
 
 
-    //同步至github github
+    //NwtHeader nwtHead(CMD_LOGIN, m_own.m_account, 0, 0);
 
     return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -162,3 +167,41 @@ HCURSOR CnwtClientDlg::OnQueryDragIcon()
     return static_cast<HCURSOR>(m_hIcon);
 }
 
+int CnwtClientDlg::ConnectServer() {
+    CString strText = "", strCaptain = "提示信息";
+    WSAData wsaData;
+    int retCode = 0;
+    retCode = WSAStartup(MAKEWORD(1, 1), &wsaData);
+    if (0 != retCode) {
+        strText.Format("[ERROR] WSAStarup()调用失败： retCode = %d", retCode);
+        MessageBox(strText, strCaptain);
+        return -1;
+    }
+    m_sock = socket(PF_INET, SOCK_STREAM, 0);
+    if (INVALID_SOCKET == m_sock) {
+        strText.Format("[ERROR] socket()调用失败： sock = %d", m_sock);
+        MessageBox(strText, strCaptain);
+        return -1;
+    }
+
+    int on = 1;
+    retCode = setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)& on, sizeof(on));
+    if (0 > retCode)
+    {
+        strText.Format("[ERROR] setsockopt()调用失败： retCode = %d", retCode);
+        MessageBox(strText, strCaptain);
+        return -1;
+    }
+    sockaddr_in svrAddr;
+    svrAddr.sin_family = AF_INET;
+    svrAddr.sin_port = htons(m_svrPort);
+    svrAddr.sin_addr.s_addr = inet_addr(m_svrIP);
+    retCode = connect(m_sock, (struct sockaddr*) & svrAddr, sizeof(svrAddr));
+    if (0 > retCode) {
+        strText.Format("[ERROR] connect()调用失败： retCode = %d", retCode);
+        MessageBox(strText, strCaptain);
+        return -1;
+    }
+
+    return 0;
+}
