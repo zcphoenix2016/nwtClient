@@ -128,7 +128,7 @@ BOOL CnwtClientDlg::OnInitDialog()
     }
 
     Login();
-    LoadContacts("Contacts.txt");
+    LoadContacts("Contacts.txt"); //TODO: remove hardcode filename
 
     return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -342,7 +342,7 @@ int CnwtClientDlg::LoadContacts(const char* filename) {
             commaPos = line.find(',');
             account = line.substr(0, commaPos);
             nickname = line.substr(commaPos + 1, line.size() - commaPos - 1);
-            m_contacts.emplace_back(std::stoull(account), nickname.c_str());
+            m_contacts.emplace_back(atoi(account.c_str()), nickname.c_str());
             m_listContacts.AddString(nickname.c_str());
         }
         contacts.close();
