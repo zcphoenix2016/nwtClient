@@ -333,7 +333,7 @@ int CnwtClientDlg::LoadContacts(const char* filename) {
         CString strText = "";
         strText.Format("[ERROR] 打开联系人文件失败： filename = %s", filename);
         MessageBox(strText, "错误提示");
-        return FALSE;
+        return -1;
     }
     else {
         std::string::size_type commaPos = 0;
@@ -348,4 +348,6 @@ int CnwtClientDlg::LoadContacts(const char* filename) {
         contacts.close();
         m_listContacts.SetCurSel(0);
     }
+
+    return 0;
 }
