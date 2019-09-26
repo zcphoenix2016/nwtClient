@@ -77,9 +77,8 @@ BOOL CnwtClientApp::InitInstance()
     int nResponse = loginDlg.DoModal();
     if (nResponse == IDOK) {
         CnwtClientDlg dlg;
-        dlg.m_own.m_account = atoi(loginDlg.m_strAccount);
+        dlg.m_own.m_account = atoll(loginDlg.m_strAccount);
         dlg.m_own.m_nickname = loginDlg.m_strNickname.GetString();
-        dlg.m_own.m_password = loginDlg.m_strPwd.GetString();
 
         m_pMainWnd = &dlg;
         nResponse = dlg.DoModal();

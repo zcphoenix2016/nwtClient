@@ -10,6 +10,8 @@
 #include "Commands.h"
 #include "NwtHeader.h"
 
+#include <fstream>
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -127,11 +129,28 @@ BOOL CnwtClientDlg::OnInitDialog()
 
     Login();
 
-    m_contacts.emplace_back(1234, "mfx", "xxx"); //TODO: Load contacts from local file(or retrieve from server?)
-    for (auto iter = m_contacts.cbegin(); iter != m_contacts.cend(); ++iter) {
-        m_listContacts.AddString(iter->m_nickname.c_str());
+    //m_contacts.emplace_back(1234, "mfx"); //TODO: Load contacts from local file(or retrieve from server?)
+
+    std::string fileName = "Contacts.txt";
+    std::ifstream contacts(fileName);
+    if (!contacts) {
+        strText.Format("[ERROR] 打开联系人文件失败： filename = %s", fileName.c_str());
+        MessageBox(strText, strCaptain);
+        return FALSE;
     }
-    m_listContacts.SetCurSel(0);
+    else {
+        std::string::size_type commaPos = 0;
+        std::string line = "", account = "", nickname = "";
+        while (getline(contacts, line)) {
+            commaPos = line.find(',');
+            account = line.substr(0, commaPos);
+            nickname = line.substr(commaPos + 1, line.size() - commaPos - 1);
+            m_contacts.emplace_back(std::stoull(account), nickname.c_str());
+            m_listContacts.AddString(nickname.c_str());
+        }
+        contacts.close();
+        m_listContacts.SetCurSel(0);
+    }
 
     return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -325,7 +344,7 @@ UINT CnwtClientDlg::RecvProcess(LPVOID lParam) {
 
     } while (1);
 
-    delete rpp; //allocate by ServerProcess()
+    delete rpp; //allocate by OnInitDialog()
 
     return 0;
 }

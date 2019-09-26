@@ -36,7 +36,7 @@ protected:
 public:
     CListBox m_listContacts;
     std::vector<Contact> m_contacts;
-    Contact m_own = Contact(0, "", "");
+    Contact m_own = Contact(0, "");
     CEdit m_editMsgList;
     CEdit m_editMsgSend;
     unsigned int m_sock = INVALID_SOCKET;
