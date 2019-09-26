@@ -46,6 +46,7 @@ public:
 private:
     int ConnectServer();
     int Login();
+    int LoadContacts(const char* filename);
     void AppendString(CString strText);
     static UINT RecvProcess(LPVOID lParam);
 

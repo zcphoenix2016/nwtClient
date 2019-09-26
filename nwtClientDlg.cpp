@@ -128,29 +128,7 @@ BOOL CnwtClientDlg::OnInitDialog()
     }
 
     Login();
-
-    //m_contacts.emplace_back(1234, "mfx"); //TODO: Load contacts from local file(or retrieve from server?)
-
-    std::string fileName = "Contacts.txt";
-    std::ifstream contacts(fileName);
-    if (!contacts) {
-        strText.Format("[ERROR] 打开联系人文件失败： filename = %s", fileName.c_str());
-        MessageBox(strText, strCaptain);
-        return FALSE;
-    }
-    else {
-        std::string::size_type commaPos = 0;
-        std::string line = "", account = "", nickname = "";
-        while (getline(contacts, line)) {
-            commaPos = line.find(',');
-            account = line.substr(0, commaPos);
-            nickname = line.substr(commaPos + 1, line.size() - commaPos - 1);
-            m_contacts.emplace_back(std::stoull(account), nickname.c_str());
-            m_listContacts.AddString(nickname.c_str());
-        }
-        contacts.close();
-        m_listContacts.SetCurSel(0);
-    }
+    LoadContacts("Contacts.txt");
 
     return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -347,4 +325,27 @@ UINT CnwtClientDlg::RecvProcess(LPVOID lParam) {
     delete rpp; //allocate by OnInitDialog()
 
     return 0;
+}
+
+int CnwtClientDlg::LoadContacts(const char* filename) {
+    std::ifstream contacts(filename);
+    if (!contacts) {
+        CString strText = "";
+        strText.Format("[ERROR] 打开联系人文件失败： filename = %s", filename);
+        MessageBox(strText, "错误提示");
+        return FALSE;
+    }
+    else {
+        std::string::size_type commaPos = 0;
+        std::string line = "", account = "", nickname = "";
+        while (getline(contacts, line)) {
+            commaPos = line.find(',');
+            account = line.substr(0, commaPos);
+            nickname = line.substr(commaPos + 1, line.size() - commaPos - 1);
+            m_contacts.emplace_back(std::stoull(account), nickname.c_str());
+            m_listContacts.AddString(nickname.c_str());
+        }
+        contacts.close();
+        m_listContacts.SetCurSel(0);
+    }
 }
