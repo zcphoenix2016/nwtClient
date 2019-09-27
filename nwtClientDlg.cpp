@@ -119,6 +119,10 @@ BOOL CnwtClientDlg::OnInitDialog()
     SetIcon(m_hIcon, FALSE);        // 设置小图标
 
     // TODO: 在此添加额外的初始化代码
+    CString strTitle = "";
+    strTitle.Format("%s(%d)", m_own.m_nickname.c_str(), m_own.m_account);
+    SetWindowText(strTitle);
+
     CString strText = "", strCaptain = "提示信息";
     int retCode = 0;
     retCode = ConnectServer();
