@@ -24,6 +24,16 @@ public:
 public:
     virtual BOOL InitInstance();
 
+private:
+    int ConnectServer();
+
+public:
+    unsigned int m_sock = INVALID_SOCKET;
+
+private:
+    unsigned int m_svrPort = 8888;
+    const char* m_svrIP = "127.0.0.1";
+
 // 实现
 
     DECLARE_MESSAGE_MAP()

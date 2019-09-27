@@ -22,6 +22,8 @@ protected:
     DECLARE_MESSAGE_MAP()
 public:
     CString m_strAccount;
-    CString m_strPwd;
+    CString m_strPassword;
     CString m_strNickname;
+    CStatic m_staticNote;
+    afx_msg void OnBnClickedButtonLogin();
 };

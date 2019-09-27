@@ -36,6 +36,18 @@ CnwtClientApp::CnwtClientApp()
 
 CnwtClientApp theApp;
 
+class RecvProcessParam
+{
+public:
+    RecvProcessParam(unsigned int clientSock, CnwtClientDlg* clientDlg)
+        : m_clientSock(clientSock), m_clientDlg(clientDlg)
+    {
+    }
+
+    unsigned int m_clientSock = INVALID_SOCKET;
+    CnwtClientDlg* m_clientDlg = nullptr;
+};
+
 
 // CnwtClientApp 初始化
 
@@ -72,30 +84,34 @@ BOOL CnwtClientApp::InitInstance()
     // 例如修改为公司或组织名
     SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
 
-    //登录对话框
-    CLoginDlg loginDlg;
-    int nResponse = loginDlg.DoModal();
-    if (nResponse == IDOK) {
-        CnwtClientDlg dlg;
-        dlg.m_own.m_account = atoi(loginDlg.m_strAccount);
-        dlg.m_own.m_nickname = loginDlg.m_strNickname.GetString();
+    //登录服务器
+    int retCode = ConnectServer();
+    if (0 == retCode) {
+        //登录对话框
+        CLoginDlg loginDlg;
+        int nResponse = loginDlg.DoModal();
+        if (nResponse == IDOK) {
+            CnwtClientDlg dlg;
+            dlg.m_own.m_account = atoi(loginDlg.m_strAccount);
+            dlg.m_own.m_nickname = loginDlg.m_strNickname.GetString();
 
-        m_pMainWnd = &dlg;
-        nResponse = dlg.DoModal();
-        if (nResponse == IDOK)
-        {
-            // TODO: 在此放置处理何时用
-            //  “确定”来关闭对话框的代码
-        }
-        else if (nResponse == IDCANCEL)
-        {
-            // TODO: 在此放置处理何时用
-            //  “取消”来关闭对话框的代码
-        }
-        else if (nResponse == -1)
-        {
-            TRACE(traceAppMsg, 0, "警告: 对话框创建失败，应用程序将意外终止。\n");
-            TRACE(traceAppMsg, 0, "警告: 如果您在对话框上使用 MFC 控件，则无法 #define _AFX_NO_MFC_CONTROLS_IN_DIALOGS。\n");
+            m_pMainWnd = &dlg;
+            nResponse = dlg.DoModal();
+            if (nResponse == IDOK)
+            {
+                // TODO: 在此放置处理何时用
+                //  “确定”来关闭对话框的代码
+            }
+            else if (nResponse == IDCANCEL)
+            {
+                // TODO: 在此放置处理何时用
+                //  “取消”来关闭对话框的代码
+            }
+            else if (nResponse == -1)
+            {
+                TRACE(traceAppMsg, 0, "警告: 对话框创建失败，应用程序将意外终止。\n");
+                TRACE(traceAppMsg, 0, "警告: 如果您在对话框上使用 MFC 控件，则无法 #define _AFX_NO_MFC_CONTROLS_IN_DIALOGS。\n");
+            }
         }
     }
 
@@ -114,3 +130,41 @@ BOOL CnwtClientApp::InitInstance()
     return FALSE;
 }
 
+int CnwtClientApp::ConnectServer() {
+    CString strText = "";
+    WSAData wsaData;
+    int retCode = 0;
+    retCode = WSAStartup(MAKEWORD(1, 1), &wsaData);
+    if (0 != retCode) {
+        strText.Format("[ERROR] WSAStarup()调用失败： retCode = %d", retCode);
+        AfxMessageBox(strText);
+        return -1;
+    }
+    m_sock = socket(PF_INET, SOCK_STREAM, 0);
+    if (INVALID_SOCKET == m_sock) {
+        strText.Format("[ERROR] socket()调用失败： sock = %d", m_sock);
+        AfxMessageBox(strText);
+        return -1;
+    }
+
+    int on = 1;
+    retCode = setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)& on, sizeof(on));
+    if (0 > retCode)
+    {
+        strText.Format("[ERROR] setsockopt()调用失败： retCode = %d", retCode);
+        AfxMessageBox(strText);
+        return -1;
+    }
+    sockaddr_in svrAddr;
+    svrAddr.sin_family = AF_INET;
+    svrAddr.sin_port = htons(m_svrPort);
+    svrAddr.sin_addr.s_addr = inet_addr(m_svrIP);
+    retCode = connect(m_sock, (struct sockaddr*) & svrAddr, sizeof(svrAddr));
+    if (0 > retCode) {
+        strText.Format("[ERROR] connect()调用失败： retCode = %d", retCode);
+        AfxMessageBox(strText);
+        return -1;
+    }
+
+    return 0;
+}
