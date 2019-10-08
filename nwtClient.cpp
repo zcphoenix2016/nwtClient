@@ -210,8 +210,7 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
                 pLoginDlg->SetDlgItemText(IDC_STATIC_NOTE, loginRsp->m_rspMsg);
             }
             else {
-                //strRecv.Format("[DEBUG] 登录成功： cmd = %d", loginRsp->m_head.m_cmd);
-                //AfxMessageBox(strRecv);
+                pLoginDlg->m_strNickname.Format("%s", loginRsp->m_nickname);
                 pLoginDlg->EndDialog(IDOK);
             }
         }
