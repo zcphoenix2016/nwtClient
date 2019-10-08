@@ -31,7 +31,6 @@ void CLoginDlg::DoDataExchange(CDataExchange* pDX)
     CDialogEx::DoDataExchange(pDX);
     DDX_Text(pDX, IDC_EDIT_ACCOUNT, m_strAccount);
     DDX_Text(pDX, IDC_EDIT_PWD, m_strPassword);
-    DDX_Text(pDX, IDC_EDIT_NICKNAME, m_strNickname);
     DDX_Control(pDX, IDC_STATIC_NOTE, m_staticNote);
 }
 
