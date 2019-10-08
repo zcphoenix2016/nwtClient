@@ -206,12 +206,12 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
         NwtHeader* nwtHead = (NwtHeader*)buf;
         if (CMD_LOGIN_RSP == nwtHead->m_cmd) {
             LoginRsp* loginRsp = (LoginRsp*)buf;
-            if (LOGIN_FAIL == loginRsp->m_result) {
-                pLoginDlg->SetDlgItemText(IDC_STATIC_NOTE, "用户名或密码错误！");
+            if (LOGIN_FAIL == loginRsp->m_rspCode) {
+                pLoginDlg->SetDlgItemText(IDC_STATIC_NOTE, loginRsp->m_rspMsg);
             }
             else {
-                strRecv.Format("[DEBUG] 登录成功： cmd = %d", loginRsp->m_head.m_cmd);
-                AfxMessageBox(strRecv);
+                //strRecv.Format("[DEBUG] 登录成功： cmd = %d", loginRsp->m_head.m_cmd);
+                //AfxMessageBox(strRecv);
                 pLoginDlg->EndDialog(IDOK);
             }
         }
