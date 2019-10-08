@@ -26,9 +26,11 @@ public:
 
 private:
     int ConnectServer();
+    static unsigned int RecvProcess(LPVOID lParam);
 
 public:
     unsigned int m_sock = INVALID_SOCKET;
+    BOOL m_running = FALSE;
 
 private:
     unsigned int m_svrPort = 8888;

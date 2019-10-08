@@ -75,6 +75,7 @@ BEGIN_MESSAGE_MAP(CnwtClientDlg, CDialogEx)
     ON_BN_CLICKED(ID_SEND, &CnwtClientDlg::OnBnClickedSend)
 END_MESSAGE_MAP()
 
+/*
 class RecvProcessParam
 {
 public:
@@ -86,6 +87,7 @@ public:
     unsigned int m_clientSock = INVALID_SOCKET;
     CnwtClientDlg* m_clientDlg = nullptr;
 };
+*/
 
 // CnwtClientDlg 消息处理程序
 
@@ -133,8 +135,8 @@ BOOL CnwtClientDlg::OnInitDialog()
     //Login();
 
     LoadContacts("Contacts.txt"); //TODO: remove hardcode filename
-    RecvProcessParam* rpp = new RecvProcessParam(theApp.m_sock, this); //will delete in RecvProcess()
-    AfxBeginThread(RecvProcess, rpp);
+//   RecvProcessParam* rpp = new RecvProcessParam(theApp.m_sock, this); //will delete in RecvProcess()
+//   AfxBeginThread(RecvProcess, rpp);
 
     return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -286,6 +288,7 @@ void CnwtClientDlg::OnBnClickedSend()
     m_editMsgSend.SetWindowText("");
 }
 
+/*
 UINT CnwtClientDlg::RecvProcess(LPVOID lParam) {
     RecvProcessParam* rpp = (RecvProcessParam*)lParam;
     unsigned int clientSock = rpp->m_clientSock;
@@ -332,6 +335,7 @@ UINT CnwtClientDlg::RecvProcess(LPVOID lParam) {
 
     return 0;
 }
+*/
 
 int CnwtClientDlg::LoadContacts(const char* filename) {
     std::ifstream contacts(filename);

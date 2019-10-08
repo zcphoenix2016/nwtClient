@@ -7,6 +7,8 @@
 #include "nwtClient.h"
 #include "nwtClientDlg.h"
 #include "CLoginDlg.h"
+#include "NwtHeader.h"
+#include "Commands.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -39,15 +41,13 @@ CnwtClientApp theApp;
 class RecvProcessParam
 {
 public:
-    RecvProcessParam(unsigned int clientSock, CnwtClientDlg* clientDlg)
-        : m_clientSock(clientSock), m_clientDlg(clientDlg)
+    RecvProcessParam(CnwtClientDlg* clientDlg)
+        : m_clientDlg(clientDlg)
     {
     }
 
-    unsigned int m_clientSock = INVALID_SOCKET;
     CnwtClientDlg* m_clientDlg = nullptr;
 };
-
 
 // CnwtClientApp 初始化
 
@@ -95,8 +95,13 @@ BOOL CnwtClientApp::InitInstance()
             dlg.m_own.m_account = atoi(loginDlg.m_strAccount);
             dlg.m_own.m_nickname = loginDlg.m_strNickname.GetString();
 
+            m_running = TRUE;
+            RecvProcessParam* rpp = new RecvProcessParam(&dlg); //will delete in RecvProcess()
+            AfxBeginThread(RecvProcess, rpp);
+
             m_pMainWnd = &dlg;
             nResponse = dlg.DoModal();
+            m_running = FALSE;
             if (nResponse == IDOK)
             {
                 // TODO: 在此放置处理何时用
@@ -168,3 +173,50 @@ int CnwtClientApp::ConnectServer() {
 
     return 0;
 }
+
+unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
+    RecvProcessParam* rpp = (RecvProcessParam*)lParam;
+    CnwtClientDlg* pClientDlg = rpp->m_clientDlg;
+    if (nullptr == pClientDlg)
+    {
+        AfxMessageBox("null dlg pointer!");
+        return -1;
+    }
+
+    CString strNew = "", strOld = "", strRecv = "";
+    char buf[1024] = { 0 };
+    int rval = 0;
+    do
+    {
+        memset(buf, 0, sizeof(buf));
+        rval = recv(theApp.m_sock, buf, 1024, 0);//TODO: refactor to single function for loop-recv
+        if (0 >= rval) {
+            int errNo = WSAGetLastError();
+            if (0 > rval) {
+                strRecv.Format("[ERROR] recv()失败： clientSock = %d, errNo = %d", theApp.m_sock, errNo);
+            }
+            else {
+                strRecv.Format("[DEBUG] 客户端关闭链接： clientSock = %d, errNo = %d", theApp.m_sock, errNo);
+            }
+            pClientDlg->AppendString(strRecv);
+            break;
+        }
+        NwtHeader* nwtHead = (NwtHeader*)buf;
+        if (CMD_INSTANT_MSG == nwtHead->m_cmd) {
+            char* content = new char[nwtHead->m_contentLength + 1];
+            memset(content, 0, nwtHead->m_contentLength + 1);
+            memcpy(content, buf + sizeof(NwtHeader), nwtHead->m_contentLength);
+            strRecv.Format("[RECV] rval=%d, srcAccount=%d, targetAccount=%d, contentLength=%d, content=%s",
+                rval, nwtHead->m_srcAccount, nwtHead->m_tarAccount, nwtHead->m_contentLength, content);
+            pClientDlg->AppendString(strRecv);
+
+            delete[] content;
+        }
+
+    } while (theApp.m_running);
+
+    delete rpp; //allocate by OnInitDialog()
+
+    return 0;
+}
+

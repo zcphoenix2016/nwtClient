@@ -47,6 +47,7 @@ END_MESSAGE_MAP()
 void CLoginDlg::OnBnClickedButtonLogin()
 {
     //m_staticNote.SetWindowText("账号或密码错误，请重试！");
+    UpdateData(TRUE);
     char buf[1024] = { 0 };
     LoginReq loginReq;
     loginReq.m_head = NwtHeader(CMD_LOGIN_REQ, atoi(m_strAccount), 0, sizeof(loginReq.m_account) + sizeof(loginReq.m_password));
