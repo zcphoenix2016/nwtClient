@@ -75,20 +75,6 @@ BEGIN_MESSAGE_MAP(CnwtClientDlg, CDialogEx)
     ON_BN_CLICKED(ID_SEND, &CnwtClientDlg::OnBnClickedSend)
 END_MESSAGE_MAP()
 
-/*
-class RecvProcessParam
-{
-public:
-    RecvProcessParam(unsigned int clientSock, CnwtClientDlg* clientDlg)
-        : m_clientSock(clientSock), m_clientDlg(clientDlg)
-    {
-    }
-
-    unsigned int m_clientSock = INVALID_SOCKET;
-    CnwtClientDlg* m_clientDlg = nullptr;
-};
-*/
-
 // CnwtClientDlg 消息处理程序
 
 BOOL CnwtClientDlg::OnInitDialog()
@@ -125,18 +111,7 @@ BOOL CnwtClientDlg::OnInitDialog()
     strCaption.Format("%s(%d)", m_own.m_nickname.c_str(), m_own.m_account);
     SetWindowText(strCaption);
 
-    //int retCode = 0;
-    //retCode = ConnectServer();
-    //if (0 == retCode) {
-    //    RecvProcessParam* rpp = new RecvProcessParam(m_sock, this); //will delete in RecvProcess()
-    //    AfxBeginThread(RecvProcess, rpp);
-    //}
-
-    //Login();
-
     LoadContacts("Contacts.txt"); //TODO: remove hardcode filename
-//   RecvProcessParam* rpp = new RecvProcessParam(theApp.m_sock, this); //will delete in RecvProcess()
-//   AfxBeginThread(RecvProcess, rpp);
 
     return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -190,61 +165,6 @@ HCURSOR CnwtClientDlg::OnQueryDragIcon()
     return static_cast<HCURSOR>(m_hIcon);
 }
 
-//int CnwtClientDlg::Login() {
-//    char buf[1024] = { 0 };
-//    NwtHeader nwtHead(CMD_LOGIN_REQ, m_own.m_account, 0, 0);
-//    memcpy(buf, &nwtHead, sizeof(NwtHeader));
-//    int retCode = send(m_sock, buf, sizeof(NwtHeader), 0);
-//    if (0 > retCode) {
-//        CString strText = "";
-//        int errNo = WSAGetLastError();
-//        strText.Format("[ERROR] 消息发送失败： errNo = %d", errNo);
-//        MessageBox(strText, "提示信息");
-//        return -1;
-//    }
-//
-//    return 0;
-//}
-
-//int CnwtClientDlg::ConnectServer() {
-//    CString strText = "", strCaption = "提示信息";
-//    WSAData wsaData;
-//    int retCode = 0;
-//    retCode = WSAStartup(MAKEWORD(1, 1), &wsaData);
-//    if (0 != retCode) {
-//        strText.Format("[ERROR] WSAStarup()调用失败： retCode = %d", retCode);
-//        MessageBox(strText, strCaption);
-//        return -1;
-//    }
-//    m_sock = socket(PF_INET, SOCK_STREAM, 0);
-//    if (INVALID_SOCKET == m_sock) {
-//        strText.Format("[ERROR] socket()调用失败： sock = %d", m_sock);
-//        MessageBox(strText, strCaption);
-//        return -1;
-//    }
-//
-//    int on = 1;
-//    retCode = setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)& on, sizeof(on));
-//    if (0 > retCode)
-//    {
-//        strText.Format("[ERROR] setsockopt()调用失败： retCode = %d", retCode);
-//        MessageBox(strText, strCaption);
-//        return -1;
-//    }
-//    sockaddr_in svrAddr;
-//    svrAddr.sin_family = AF_INET;
-//    svrAddr.sin_port = htons(m_svrPort);
-//    svrAddr.sin_addr.s_addr = inet_addr(m_svrIP);
-//    retCode = connect(m_sock, (struct sockaddr*) & svrAddr, sizeof(svrAddr));
-//    if (0 > retCode) {
-//        strText.Format("[ERROR] connect()调用失败： retCode = %d", retCode);
-//        MessageBox(strText, strCaption);
-//        return -1;
-//    }
-//
-//    return 0;
-//}
-
 void CnwtClientDlg::AppendString(CString strText) {
     CString strOld = "", strNew = "";
     m_editMsgList.GetWindowText(strOld);
@@ -287,55 +207,6 @@ void CnwtClientDlg::OnBnClickedSend()
     AppendString("[SEND] " + strMsgSend);
     m_editMsgSend.SetWindowText("");
 }
-
-/*
-UINT CnwtClientDlg::RecvProcess(LPVOID lParam) {
-    RecvProcessParam* rpp = (RecvProcessParam*)lParam;
-    unsigned int clientSock = rpp->m_clientSock;
-    CnwtClientDlg* pClientDlg = rpp->m_clientDlg;
-    if (INVALID_SOCKET == clientSock || nullptr == pClientDlg)
-    {
-        AfxMessageBox("invalid client socket or null dlg pointer!");
-        return -1;
-    }
-
-    CString strNew = "", strOld = "", strRecv = "";
-    char buf[1024] = { 0 };
-    int rval = 0;
-    do
-    {
-        memset(buf, 0, sizeof(buf));
-        rval = recv(clientSock, buf, 1024, 0);//TODO: refactor to single function for loop-recv
-        if (0 >= rval) {
-            int errNo = WSAGetLastError();
-            if (0 > rval) {
-                strRecv.Format("[ERROR] recv()失败： clientSock = %d, errNo = %d", clientSock, errNo);
-            }
-            else {
-                strRecv.Format("[DEBUG] 客户端关闭链接： clientSock = %d, errNo = %d", clientSock, errNo);
-            }
-            pClientDlg->AppendString(strRecv);
-            break;
-        }
-        NwtHeader* nwtHead = (NwtHeader*)buf;
-        if (CMD_INSTANT_MSG == nwtHead->m_cmd) {
-            char* content = new char[nwtHead->m_contentLength + 1];
-            memset(content, 0, nwtHead->m_contentLength + 1);
-            memcpy(content, buf + sizeof(NwtHeader), nwtHead->m_contentLength);
-            strRecv.Format("[RECV] rval=%d, srcAccount=%d, targetAccount=%d, contentLength=%d, content=%s",
-                rval, nwtHead->m_srcAccount, nwtHead->m_tarAccount, nwtHead->m_contentLength, content);
-            pClientDlg->AppendString(strRecv);
-
-            delete[] content;
-        }
-
-    } while (1);
-
-    delete rpp; //allocate by OnInitDialog()
-
-    return 0;
-}
-*/
 
 int CnwtClientDlg::LoadContacts(const char* filename) {
     std::ifstream contacts(filename);

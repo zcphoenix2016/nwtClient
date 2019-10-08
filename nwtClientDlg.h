@@ -39,15 +39,9 @@ public:
     Contact m_own = Contact(0, "");
     CEdit m_editMsgList;
     CEdit m_editMsgSend;
-    //unsigned int m_sock = INVALID_SOCKET;
-    //unsigned int m_svrPort = 8888;
-    //const char* m_svrIP = "127.0.0.1";
 
 private:
-    //int ConnectServer();
-    //int Login();
     int LoadContacts(const char* filename);
-    //static UINT RecvProcess(LPVOID lParam);
 
 public:
     afx_msg void OnBnClickedSend();

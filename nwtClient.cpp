@@ -41,11 +41,12 @@ CnwtClientApp theApp;
 class RecvProcessParam
 {
 public:
-    RecvProcessParam(CnwtClientDlg* clientDlg)
-        : m_clientDlg(clientDlg)
+    RecvProcessParam(CLoginDlg* loginDlg, CnwtClientDlg* clientDlg)
+        : m_loginDlg(loginDlg), m_clientDlg(clientDlg)
     {
     }
 
+    CLoginDlg* m_loginDlg = nullptr;
     CnwtClientDlg* m_clientDlg = nullptr;
 };
 
@@ -87,20 +88,20 @@ BOOL CnwtClientApp::InitInstance()
     //登录服务器
     int retCode = ConnectServer();
     if (0 == retCode) {
-        //登录对话框
         CLoginDlg loginDlg;
+        CnwtClientDlg clientDlg;
+        m_running = TRUE;
+        RecvProcessParam* rpp = new RecvProcessParam(&loginDlg, &clientDlg); //will delete in RecvProcess()
+        AfxBeginThread(RecvProcess, rpp);
+        
         int nResponse = loginDlg.DoModal();
         if (nResponse == IDOK) {
-            CnwtClientDlg dlg;
-            dlg.m_own.m_account = atoi(loginDlg.m_strAccount);
-            dlg.m_own.m_nickname = loginDlg.m_strNickname.GetString();
+            
+            clientDlg.m_own.m_account = atoi(loginDlg.m_strAccount);
+            clientDlg.m_own.m_nickname = loginDlg.m_strNickname.GetString();
 
-            m_running = TRUE;
-            RecvProcessParam* rpp = new RecvProcessParam(&dlg); //will delete in RecvProcess()
-            AfxBeginThread(RecvProcess, rpp);
-
-            m_pMainWnd = &dlg;
-            nResponse = dlg.DoModal();
+            m_pMainWnd = &clientDlg;
+            nResponse = clientDlg.DoModal();
             m_running = FALSE;
             if (nResponse == IDOK)
             {
@@ -176,8 +177,9 @@ int CnwtClientApp::ConnectServer() {
 
 unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
     RecvProcessParam* rpp = (RecvProcessParam*)lParam;
+    CLoginDlg* pLoginDlg = rpp->m_loginDlg;
     CnwtClientDlg* pClientDlg = rpp->m_clientDlg;
-    if (nullptr == pClientDlg)
+    if (nullptr == pLoginDlg || nullptr == pClientDlg)
     {
         AfxMessageBox("null dlg pointer!");
         return -1;
@@ -202,6 +204,18 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
             break;
         }
         NwtHeader* nwtHead = (NwtHeader*)buf;
+        if (CMD_LOGIN_RSP == nwtHead->m_cmd) {
+            LoginRsp* loginRsp = (LoginRsp*)buf;
+            if (LOGIN_FAIL == loginRsp->m_result) {
+                pLoginDlg->SetDlgItemText(IDC_STATIC_NOTE, "用户名或密码错误！");
+            }
+            else {
+                strRecv.Format("[DEBUG] 登录成功： cmd = %d", loginRsp->m_head.m_cmd);
+                AfxMessageBox(strRecv);
+                pLoginDlg->EndDialog(IDOK);
+            }
+        }
+
         if (CMD_INSTANT_MSG == nwtHead->m_cmd) {
             char* content = new char[nwtHead->m_contentLength + 1];
             memset(content, 0, nwtHead->m_contentLength + 1);

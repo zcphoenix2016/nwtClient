@@ -46,7 +46,6 @@ END_MESSAGE_MAP()
 
 void CLoginDlg::OnBnClickedButtonLogin()
 {
-    //m_staticNote.SetWindowText("账号或密码错误，请重试！");
     UpdateData(TRUE);
     char buf[1024] = { 0 };
     LoginReq loginReq;
@@ -61,36 +60,4 @@ void CLoginDlg::OnBnClickedButtonLogin()
         strText.Format("[ERROR] 消息发送失败： errNo = %d", errNo);
         MessageBox(strText, "提示信息");
     }
-
-    //接收loginRsp
-    CString strText = "";
-    int rval = 0;
-    do
-    {
-        memset(buf, 0, sizeof(buf));
-        rval = recv(theApp.m_sock, buf, 1024, 0);
-        if (0 >= rval) {
-            int errNo = WSAGetLastError();
-            if (0 > rval) {
-                strText.Format("[ERROR] recv()失败： socket = %d, errNo = %d", theApp.m_sock, errNo);
-            }
-            else {
-                strText.Format("[DEBUG] 服务端关闭链接： socket = %d, errNo = %d", theApp.m_sock, errNo);
-            }
-            AfxMessageBox(strText);
-            break;
-        }
-        NwtHeader* nwtHead = (NwtHeader*)buf;
-        if (CMD_LOGIN_RSP != nwtHead->m_cmd) {
-            strText.Format("[ERROR] 非登录应答： cmd = %d", nwtHead->m_cmd);
-            AfxMessageBox(strText);
-            continue;
-        }
-        else {//TODO: check result !
-            strText.Format("[DEBUG] 登录成功： cmd = %d", nwtHead->m_cmd);
-            AfxMessageBox(strText);
-            EndDialog(IDOK);
-            break; //???
-        }
-    } while (1);
 }
