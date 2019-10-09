@@ -73,6 +73,7 @@ BEGIN_MESSAGE_MAP(CnwtClientDlg, CDialogEx)
     ON_WM_PAINT()
     ON_WM_QUERYDRAGICON()
     ON_BN_CLICKED(ID_SEND, &CnwtClientDlg::OnBnClickedSend)
+    ON_LBN_SELCHANGE(IDC_LIST_CONTACTS, &CnwtClientDlg::OnLbnSelchangeListContacts)
 END_MESSAGE_MAP()
 
 // CnwtClientDlg 消息处理程序
@@ -176,13 +177,13 @@ void CnwtClientDlg::OnBnClickedSend()
 {
     CString strSelContact = "";
     m_listContacts.GetText(m_listContacts.GetCurSel(), strSelContact);
-    auto iter = m_contacts.cbegin();
-    for (; iter != m_contacts.cend(); ++iter) {
-        if (iter->m_nickname == std::string(strSelContact.GetString())) {
+    auto iterContact = m_contacts.begin();
+    for (; iterContact != m_contacts.end(); ++iterContact) {
+        if (iterContact->m_nickname == std::string(strSelContact.GetString())) {
             break;
         }
     }
-    if (iter == m_contacts.cend()) {
+    if (iterContact == m_contacts.end()) {
         CString strText = "";
         strText.Format("[ERROR] 联系人未注册： nickname = %s", strSelContact);
         MessageBox(strText, "提示信息");
@@ -191,7 +192,7 @@ void CnwtClientDlg::OnBnClickedSend()
 
     CString strMsgSend = "";
     m_editMsgSend.GetWindowText(strMsgSend);
-    NwtHeader nwtHead(CMD_INSTANT_MSG, m_own.m_account, iter->m_account, strMsgSend.GetLength());
+    NwtHeader nwtHead(CMD_INSTANT_MSG, m_own.m_account, iterContact->m_account, strMsgSend.GetLength());
     char buf[1024] = { 0 };
     memcpy(buf, &nwtHead, sizeof(NwtHeader));
     memcpy(buf + sizeof(NwtHeader), strMsgSend.GetString(), nwtHead.m_contentLength);
@@ -203,8 +204,9 @@ void CnwtClientDlg::OnBnClickedSend()
         MessageBox(strText, "提示信息");
         return;
     }
-
-    AppendString("[SEND] " + strMsgSend);
+    strMsgSend.Format("[SEND] %s", strMsgSend);
+    iterContact->m_msgs.push_back(strMsgSend.GetString());
+    AppendString(strMsgSend);
     m_editMsgSend.SetWindowText("");
 }
 
@@ -217,8 +219,8 @@ int CnwtClientDlg::LoadContacts(const char* filename) {
         return -1;
     }
     else {
-        std::string::size_type commaPos = 0;
-        std::string line = "", account = "", nickname = "";
+        string::size_type commaPos = 0;
+        string line = "", account = "", nickname = "";
         while (getline(contacts, line)) {
             commaPos = line.find(',');
             account = line.substr(0, commaPos);
@@ -231,4 +233,41 @@ int CnwtClientDlg::LoadContacts(const char* filename) {
     }
 
     return 0;
+}
+
+
+void CnwtClientDlg::OnLbnSelchangeListContacts()
+{
+    int index = m_listContacts.GetCurSel();
+    CString strShowName;
+    m_listContacts.GetText(index, strShowName);
+    string showName = strShowName.GetString();
+    auto iterContact = m_contacts.begin();
+    for (; iterContact != m_contacts.end(); iterContact++) {
+        if (iterContact->m_showName == showName) {
+            break;
+        }
+    }
+
+    if (iterContact == m_contacts.end()) {
+        //TODO: report error.
+        return;
+    }
+
+    m_editMsgList.SetSel(0, -1);
+    m_editMsgList.Clear();
+    CString strMsg = "";
+    auto iterMsg = iterContact->m_msgs.begin();
+    for (; iterMsg != iterContact->m_msgs.end(); iterMsg++) {
+        strMsg.Format("%s", iterMsg->c_str());
+        AppendString(strMsg);
+    }
+
+    if (0 != iterContact->m_numOfUnread) {
+        iterContact->m_numOfUnread = 0;
+        iterContact->m_showName = iterContact->m_nickname;
+    }
+    m_listContacts.DeleteString(index);
+    m_listContacts.InsertString(index, iterContact->m_nickname.c_str());
+    m_listContacts.SetCurSel(index);
 }

@@ -46,4 +46,5 @@ private:
 public:
     afx_msg void OnBnClickedSend();
     void AppendString(CString strText);
+    afx_msg void OnLbnSelchangeListContacts();
 };

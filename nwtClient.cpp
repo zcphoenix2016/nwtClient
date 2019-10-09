@@ -204,6 +204,7 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
             break;
         }
         NwtHeader* nwtHead = (NwtHeader*)buf;
+        //TODO: refactor to single functions for different msg types.
         if (CMD_LOGIN_RSP == nwtHead->m_cmd) {
             LoginRsp* loginRsp = (LoginRsp*)buf;
             if (LOGIN_FAIL == loginRsp->m_rspCode) {
@@ -219,9 +220,39 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
             char* content = new char[nwtHead->m_contentLength + 1];
             memset(content, 0, nwtHead->m_contentLength + 1);
             memcpy(content, buf + sizeof(NwtHeader), nwtHead->m_contentLength);
-            strRecv.Format("[RECV] rval=%d, srcAccount=%d, targetAccount=%d, contentLength=%d, content=%s",
-                rval, nwtHead->m_srcAccount, nwtHead->m_tarAccount, nwtHead->m_contentLength, content);
-            pClientDlg->AppendString(strRecv);
+            
+            auto iterContact = pClientDlg->m_contacts.begin();
+            for (; iterContact != pClientDlg->m_contacts.end(); iterContact++) {
+                if (iterContact->m_account == nwtHead->m_srcAccount) {
+                    break;
+                }
+            }
+            if (iterContact == pClientDlg->m_contacts.end()) {
+                strRecv.Format("[ERROR] receive msg from non-contact: account = %d", nwtHead->m_srcAccount);
+                AfxMessageBox(strRecv); //TODO: build log system
+            }
+            else {
+                strRecv.Format("[RECV] %s", content);
+                iterContact->m_msgs.push_back(strRecv.GetString());
+                int index = pClientDlg->m_listContacts.FindStringExact(-1, iterContact->m_showName.c_str());
+                if (LB_ERR == index) {
+                    strRecv.Format("[ERROR] Contact not in the listbox: nickname = %s", iterContact->m_showName.c_str());
+                    AfxMessageBox(strRecv); //TODO: build log system
+                }
+                else {
+                    if (index == pClientDlg->m_listContacts.GetCurSel()) {
+                        strRecv.Format("[RECV] %s", content);
+                        pClientDlg->AppendString(strRecv);
+                    }
+                    else {
+                        iterContact->m_numOfUnread++;
+                        strRecv.Format("(%d)%s", iterContact->m_numOfUnread, iterContact->m_nickname.c_str());
+                        iterContact->m_showName = strRecv.GetString();
+                        pClientDlg->m_listContacts.DeleteString(index);
+                        pClientDlg->m_listContacts.InsertString(index, strRecv.GetString());
+                    }
+                }
+            }
 
             delete[] content;
         }
