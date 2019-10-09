@@ -36,6 +36,9 @@
     <ClInclude Include="CLoginDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Contact.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nwtClient.cpp">

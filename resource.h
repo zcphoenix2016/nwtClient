@@ -18,9 +18,7 @@
 #define IDC_EDIT_PWD                    1005
 #define ID_SEND                         1005
 #define IDC_STATIC_ACCOUNT2             1006
-#define IDC_EDIT_NICKNAME               1007
 #define IDC_STATIC_NOTE                 1008
-#define IDC_BUTTON1                     1009
 #define IDC_BUTTON_LOGIN                1009
 
 // Next default values for new objects
