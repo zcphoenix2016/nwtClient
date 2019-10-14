@@ -186,27 +186,19 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
     }
 
     CString strNew = "", strOld = "", strRecv = "";
-    char buf[1024] = { 0 };
-    int rval = 0;
+    NwtHeader* nwtHead = NULL;
     do
     {
-        memset(buf, 0, sizeof(buf));
-        rval = recv(theApp.m_sock, buf, 1024, 0);//TODO: refactor to single function for loop-recv
-        if (0 >= rval) {
+        nwtHead = (NwtHeader*)theApp.Recv();
+        if (NULL == nwtHead) {
             int errNo = WSAGetLastError();
-            if (0 > rval) {
-                strRecv.Format("[ERROR] recv()失败： clientSock = %d, errNo = %d", theApp.m_sock, errNo);
-            }
-            else {
-                strRecv.Format("[DEBUG] 客户端关闭链接： clientSock = %d, errNo = %d", theApp.m_sock, errNo);
-            }
+            strRecv.Format("[DEBUG] 服务端关闭链接： clientSock = %d, errNo = %d", theApp.m_sock, errNo);
             pClientDlg->AppendString(strRecv);
             break;
         }
-        NwtHeader* nwtHead = (NwtHeader*)buf;
-        //TODO: refactor to single functions for different msg types.
+
         if (CMD_LOGIN_RSP == nwtHead->m_cmd) {
-            LoginRsp* loginRsp = (LoginRsp*)buf;
+            LoginRsp* loginRsp = (LoginRsp*)nwtHead;
             if (LOGIN_FAIL == loginRsp->m_rspCode) {
                 pLoginDlg->SetDlgItemText(IDC_STATIC_NOTE, loginRsp->m_rspMsg);
             }
@@ -219,7 +211,7 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
         if (CMD_INSTANT_MSG == nwtHead->m_cmd) {
             char* content = new char[nwtHead->m_contentLength + 1];
             memset(content, 0, nwtHead->m_contentLength + 1);
-            memcpy(content, buf + sizeof(NwtHeader), nwtHead->m_contentLength);
+            memcpy(content, (char*)nwtHead + sizeof(NwtHeader), nwtHead->m_contentLength);
             
             auto iterContact = pClientDlg->m_contacts.begin();
             for (; iterContact != pClientDlg->m_contacts.end(); iterContact++) {
@@ -255,6 +247,7 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
             }
 
             delete[] content;
+            delete[] (char*)nwtHead;
         }
 
     } while (theApp.m_running);
@@ -283,7 +276,7 @@ int CnwtClientApp::Send(void* buf, size_t nbytes) {
     return (int)(nbytes - nleft);
 }
 
-int CnwtClientApp::Recv(void* buf, size_t nbytes) {
+int CnwtClientApp::nwtRecv(void* buf, size_t nbytes) {
     int nread = 0;
     size_t nleft = nbytes;
     char* ptr = (char*)buf;
@@ -300,6 +293,26 @@ int CnwtClientApp::Recv(void* buf, size_t nbytes) {
     }
 
     return (int)(nbytes - nleft);
+}
+
+void* CnwtClientApp::Recv() {
+    NwtHeader nwtHead;
+    int want = sizeof(NwtHeader);
+    if (want != nwtRecv(&nwtHead, want)) {
+        return NULL;
+    }
+
+    NwtHeader* task = (NwtHeader*)new char[sizeof(NwtHeader) + nwtHead.m_contentLength];
+    memcpy(task, &nwtHead, sizeof(NwtHeader));
+    if (0 < nwtHead.m_contentLength) {
+        want = nwtHead.m_contentLength;
+        if (want != nwtRecv((char*)task + sizeof(NwtHeader), nwtHead.m_contentLength)) {
+            delete [] task;
+            return NULL;
+        }
+    }
+
+    return (void*)task;
 }
 
 
