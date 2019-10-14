@@ -196,15 +196,16 @@ void CnwtClientDlg::OnBnClickedSend()
     char buf[1024] = { 0 };
     memcpy(buf, &nwtHead, sizeof(NwtHeader));
     memcpy(buf + sizeof(NwtHeader), strMsgSend.GetString(), nwtHead.m_contentLength);
-    int retCode = send(theApp.m_sock, buf, sizeof(NwtHeader) + nwtHead.m_contentLength, 0); //TODO: refactor to single function to do loop send
-    if (0 > retCode) {
+    int want = sizeof(NwtHeader) + nwtHead.m_contentLength;
+    if (want != theApp.Send(buf, want)) {
         CString strText = "";
         int errNo = WSAGetLastError();
         strText.Format("[ERROR] 消息发送失败： errNo = %d", errNo);
         MessageBox(strText, "提示信息");
         return;
     }
-    strMsgSend.Format("[SEND] %s", strMsgSend);
+
+    strMsgSend.Format("    [SEND] %s", strMsgSend);
     iterContact->m_msgs.push_back(strMsgSend.GetString());
     AppendString(strMsgSend);
     m_editMsgSend.SetWindowText("");

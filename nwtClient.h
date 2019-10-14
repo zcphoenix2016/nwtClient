@@ -29,6 +29,10 @@ private:
     static unsigned int RecvProcess(LPVOID lParam);
 
 public:
+    int Send(void* buf, size_t nbytes);
+    int Recv(void* buf, size_t nbytes);
+
+public:
     unsigned int m_sock = INVALID_SOCKET;
     BOOL m_running = FALSE;
 

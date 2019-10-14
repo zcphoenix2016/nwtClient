@@ -264,3 +264,43 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
     return 0;
 }
 
+int CnwtClientApp::Send(void* buf, size_t nbytes) {
+    int nsend = 0;
+    size_t nleft = nbytes;
+    char* ptr = (char*)buf;
+    while (nleft > 0) {
+        nsend = send(m_sock, ptr, nleft, 0);
+        if (0 == nsend) {
+            break;
+        }
+        if (0 > nsend) {
+            return -1;
+        }
+        ptr += nsend;
+        nleft -= nsend;
+    }
+
+    return (int)(nbytes - nleft);
+}
+
+int CnwtClientApp::Recv(void* buf, size_t nbytes) {
+    int nread = 0;
+    size_t nleft = nbytes;
+    char* ptr = (char*)buf;
+    while (nleft > 0) {
+        nread = recv(m_sock, ptr, nleft, 0);
+        if (0 == nread) {
+            break;
+        }
+        if (0 > nread) {
+            return -1;
+        }
+        ptr += nread;
+        nleft -= nread;
+    }
+
+    return (int)(nbytes - nleft);
+}
+
+
+

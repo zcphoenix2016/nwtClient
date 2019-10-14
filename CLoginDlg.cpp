@@ -52,8 +52,8 @@ void CLoginDlg::OnBnClickedButtonLogin()
     loginReq.m_account = atoi(m_strAccount);
     memcpy(loginReq.m_password, m_strPassword.GetString(), sizeof(loginReq.m_password));
     memcpy(buf, &loginReq, sizeof(LoginReq));
-    int retCode = send(theApp.m_sock, buf, sizeof(LoginReq), 0);
-    if (0 > retCode) {
+    int want = sizeof(LoginReq);
+    if (want != theApp.Send(buf, want)) {
         CString strText = "";
         int errNo = WSAGetLastError();
         strText.Format("[ERROR] 消息发送失败： errNo = %d", errNo);
