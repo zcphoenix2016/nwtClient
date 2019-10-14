@@ -247,9 +247,9 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
             }
 
             delete[] content;
-            delete[] (char*)nwtHead;
         }
 
+        delete[] (char*)nwtHead;
     } while (theApp.m_running);
 
     delete rpp; //allocate by OnInitDialog()
