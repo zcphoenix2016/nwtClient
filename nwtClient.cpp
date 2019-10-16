@@ -9,6 +9,7 @@
 #include "CLoginDlg.h"
 #include "NwtHeader.h"
 #include "Commands.h"
+#include "NwtBase.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -258,47 +259,13 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
 }
 
 int CnwtClientApp::Send(void* buf, size_t nbytes) {
-    int nsend = 0;
-    size_t nleft = nbytes;
-    char* ptr = (char*)buf;
-    while (nleft > 0) {
-        nsend = send(m_sock, ptr, nleft, 0);
-        if (0 == nsend) {
-            break;
-        }
-        if (0 > nsend) {
-            return -1;
-        }
-        ptr += nsend;
-        nleft -= nsend;
-    }
-
-    return (int)(nbytes - nleft);
-}
-
-int CnwtClientApp::nwtRecv(void* buf, size_t nbytes) {
-    int nread = 0;
-    size_t nleft = nbytes;
-    char* ptr = (char*)buf;
-    while (nleft > 0) {
-        nread = recv(m_sock, ptr, nleft, 0);
-        if (0 == nread) {
-            break;
-        }
-        if (0 > nread) {
-            return -1;
-        }
-        ptr += nread;
-        nleft -= nread;
-    }
-
-    return (int)(nbytes - nleft);
+    return nwtSend(m_sock, buf, nbytes);
 }
 
 void* CnwtClientApp::Recv() {
     NwtHeader nwtHead;
     int want = sizeof(NwtHeader);
-    if (want != nwtRecv(&nwtHead, want)) {
+    if (want != nwtRecv(m_sock, &nwtHead, want)) {
         return NULL;
     }
 
@@ -306,7 +273,7 @@ void* CnwtClientApp::Recv() {
     memcpy(task, &nwtHead, sizeof(NwtHeader));
     if (0 < nwtHead.m_contentLength) {
         want = nwtHead.m_contentLength;
-        if (want != nwtRecv((char*)task + sizeof(NwtHeader), nwtHead.m_contentLength)) {
+        if (want != nwtRecv(m_sock, (char*)task + sizeof(NwtHeader), nwtHead.m_contentLength)) {
             delete [] task;
             return NULL;
         }

@@ -27,7 +27,6 @@ public:
 private:
     int ConnectServer();
     static unsigned int RecvProcess(LPVOID lParam);
-    int nwtRecv(void* buf, size_t nbytes);
 
 public:
     int Send(void* buf, size_t nbytes);
