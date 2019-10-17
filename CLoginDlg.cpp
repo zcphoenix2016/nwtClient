@@ -46,14 +46,15 @@ END_MESSAGE_MAP()
 void CLoginDlg::OnBnClickedButtonLogin()
 {
     UpdateData(TRUE);
-    char buf[1024] = { 0 };
+    //char buf[1024] = { 0 };
     LoginReq loginReq;
-    loginReq.m_head = NwtHeader(CMD_LOGIN_REQ, atoi(m_strAccount), 0, sizeof(loginReq.m_account) + sizeof(loginReq.m_password));
+    loginReq.m_head = NwtHeader(CMD_LOGIN_REQ, atoi(m_strAccount), 0, sizeof(LoginReq) - sizeof(NwtHeader));
     loginReq.m_account = atoi(m_strAccount);
-    memcpy(loginReq.m_password, m_strPassword.GetString(), sizeof(loginReq.m_password));
-    memcpy(buf, &loginReq, sizeof(LoginReq));
-    int want = sizeof(LoginReq);
-    if (want != theApp.Send(buf, want)) {
+    memset(&loginReq.m_password, 0, sizeof(loginReq.m_password));
+    memcpy(loginReq.m_password, m_strPassword.GetString(), m_strPassword.GetLength());
+    //memcpy(buf, &loginReq, sizeof(LoginReq));
+    //int want = sizeof(LoginReq);
+    if (sizeof(LoginReq) != theApp.Send(&loginReq, sizeof(LoginReq))) {
         CString strText = "";
         int errNo = WSAGetLastError();
         strText.Format("[ERROR] 消息发送失败： errNo = %d", errNo);

@@ -7,7 +7,6 @@
 #include "nwtClient.h"
 #include "nwtClientDlg.h"
 #include "CLoginDlg.h"
-#include "NwtHeader.h"
 #include "Commands.h"
 #include "NwtBase.h"
 
@@ -187,10 +186,12 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
     }
 
     CString strNew = "", strOld = "", strRecv = "";
+    void* recv = NULL;
     NwtHeader* nwtHead = NULL;
     do
     {
-        nwtHead = (NwtHeader*)theApp.Recv();
+        recv = theApp.Recv();
+        nwtHead = (NwtHeader*)recv;
         if (NULL == nwtHead) {
             int errNo = WSAGetLastError();
             strRecv.Format("[DEBUG] 服务端关闭链接： clientSock = %d, errNo = %d", theApp.m_sock, errNo);
@@ -199,7 +200,7 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
         }
 
         if (CMD_LOGIN_RSP == nwtHead->m_cmd) {
-            LoginRsp* loginRsp = (LoginRsp*)nwtHead;
+            LoginRsp* loginRsp = (LoginRsp*)recv;
             if (LOGIN_FAIL == loginRsp->m_rspCode) {
                 pLoginDlg->SetDlgItemText(IDC_STATIC_NOTE, loginRsp->m_rspMsg);
             }
@@ -212,7 +213,7 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
         if (CMD_INSTANT_MSG == nwtHead->m_cmd) {
             char* content = new char[nwtHead->m_contentLength + 1];
             memset(content, 0, nwtHead->m_contentLength + 1);
-            memcpy(content, (char*)nwtHead + sizeof(NwtHeader), nwtHead->m_contentLength);
+            memcpy(content, (char*)recv + sizeof(NwtHeader), nwtHead->m_contentLength);
             
             auto iterContact = pClientDlg->m_contacts.begin();
             for (; iterContact != pClientDlg->m_contacts.end(); iterContact++) {
@@ -250,7 +251,7 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
             delete[] content;
         }
 
-        delete[] (char*)nwtHead;
+        delete[] (char*)recv;
     } while (theApp.m_running);
 
     delete rpp; //allocate by OnInitDialog()
@@ -263,23 +264,7 @@ int CnwtClientApp::Send(void* buf, size_t nbytes) {
 }
 
 void* CnwtClientApp::Recv() {
-    NwtHeader nwtHead;
-    int want = sizeof(NwtHeader);
-    if (want != nwtRecv(m_sock, &nwtHead, want)) {
-        return NULL;
-    }
-
-    NwtHeader* task = (NwtHeader*)new char[sizeof(NwtHeader) + nwtHead.m_contentLength];
-    memcpy(task, &nwtHead, sizeof(NwtHeader));
-    if (0 < nwtHead.m_contentLength) {
-        want = nwtHead.m_contentLength;
-        if (want != nwtRecv(m_sock, (char*)task + sizeof(NwtHeader), nwtHead.m_contentLength)) {
-            delete [] task;
-            return NULL;
-        }
-    }
-
-    return (void*)task;
+    return nwtRecv(m_sock);
 }
 
 
