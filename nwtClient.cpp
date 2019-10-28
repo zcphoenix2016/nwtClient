@@ -210,19 +210,21 @@ unsigned int CnwtClientApp::RecvProcess(LPVOID lParam) {
             }
         }
 
+        //TODO: refactor to single function for diff msg type
         if (CMD_INSTANT_MSG == nwtHead->m_cmd) {
-            char* content = new char[nwtHead->m_contentLength + 1];
-            memset(content, 0, nwtHead->m_contentLength + 1);
-            memcpy(content, (char*)recv + sizeof(NwtHeader), nwtHead->m_contentLength);
+            InstantMsg* im = (InstantMsg*)nwtHead;
+            char* content = new char[im->m_head.m_contentLength + 1];
+            memset(content, 0, im->m_head.m_contentLength + 1);
+            memcpy(content, im->m_content, im->m_head.m_contentLength);
             
             auto iterContact = pClientDlg->m_contacts.begin();
             for (; iterContact != pClientDlg->m_contacts.end(); iterContact++) {
-                if (iterContact->m_account == nwtHead->m_srcAccount) {
+                if (iterContact->m_account == im->m_head.m_srcAccount) {
                     break;
                 }
             }
             if (iterContact == pClientDlg->m_contacts.end()) {
-                strRecv.Format("[ERROR] receive msg from non-contact: account = %d", nwtHead->m_srcAccount);
+                strRecv.Format("[ERROR] receive msg from non-contact: account = %d", im->m_head.m_srcAccount);
                 AfxMessageBox(strRecv); //TODO: build log system
             }
             else {

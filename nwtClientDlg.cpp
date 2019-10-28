@@ -185,30 +185,35 @@ void CnwtClientDlg::OnBnClickedSend()
     }
     if (iterContact == m_contacts.end()) {
         CString strText = "";
-        strText.Format("[ERROR] 联系人未注册： nickname = %s", strSelContact);
+        strText.Format("[ERROR] 联系人未注册： nickname = %s", strSelContact.GetString());
         MessageBox(strText, "提示信息");
         return;
     }
 
     CString strMsgSend = "";
     m_editMsgSend.GetWindowText(strMsgSend);
-    NwtHeader nwtHead(CMD_INSTANT_MSG, m_own.m_account, iterContact->m_account, strMsgSend.GetLength());
-    char buf[1024] = { 0 };
-    memcpy(buf, &nwtHead, sizeof(NwtHeader));
-    memcpy(buf + sizeof(NwtHeader), strMsgSend.GetString(), nwtHead.m_contentLength);
-    int want = sizeof(NwtHeader) + nwtHead.m_contentLength;
-    if (want != theApp.Send(buf, want)) {
+    char* imMsg = new char[sizeof(NwtHeader) + strMsgSend.GetLength()];
+    InstantMsg* im = (InstantMsg*)imMsg;
+    im->m_head.m_cmd = CMD_INSTANT_MSG;
+    im->m_head.m_srcAccount = m_own.m_account;
+    im->m_head.m_tarAccount = iterContact->m_account;
+    im->m_head.m_contentLength = strMsgSend.GetLength();
+    memcpy(im->m_content, strMsgSend.GetString(), strMsgSend.GetLength());
+    int want = sizeof(NwtHeader) + im->m_head.m_contentLength;
+    if (want != theApp.Send((void*)im, want)) {
         CString strText = "";
         int errNo = WSAGetLastError();
         strText.Format("[ERROR] 消息发送失败： errNo = %d", errNo);
         MessageBox(strText, "提示信息");
-        return;
     }
-
-    strMsgSend.Format("    [SEND] %s", strMsgSend);
-    iterContact->m_msgs.push_back(strMsgSend.GetString());
-    AppendString(strMsgSend);
-    m_editMsgSend.SetWindowText("");
+    else {
+        strMsgSend.Format("    [SEND] %s", strMsgSend.GetString());
+        iterContact->m_msgs.push_back(strMsgSend.GetString());
+        AppendString(strMsgSend);
+        m_editMsgSend.SetWindowText("");
+    }
+    
+    delete[] imMsg;
 }
 
 int CnwtClientDlg::LoadContacts(const char* filename) {
